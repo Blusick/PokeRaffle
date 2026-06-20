@@ -24,7 +24,7 @@ const CONFIG = {
   BIG_HOLDER_PCT: 4,
   POLL_MS: 30000,            // heavy poll: token info, holders, pulls
   FAST_POLL_MS: 3000,        // light poll: creator fees only (drives the bar)
-  PULLS_RESET_TOKEN: "reset-2026-06-20b",  // bump this string to wipe latest pulls again
+  PULLS_RESET_TOKEN: "reset-2026-06-20c",  // bump this string to wipe latest pulls again
   TOP_HOLDERS_SHOWN: 50,
   MAX_PULLS: 12,
   DEFAULT_NFT_VALUE_SOL: null,                        // optional fallback value per card (SOL) if no market price found
