@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>RAFFLE</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon.png"/>
+<link rel="apple-touch-icon" href="/favicon-180.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -76,19 +79,20 @@
   .cbar{height:5px;background:var(--soft);border-radius:4px;overflow:hidden;margin-top:4px}
   .cbar>span{display:block;height:100%;background:var(--grad)}
 
-  /* pulls */
-  .pulls{display:flex;flex-direction:column;gap:11px}
-  .pull{display:flex;align-items:center;gap:13px;padding:12px;border-radius:14px;background:#fff;border:1px solid var(--line)}
-  .nft{width:62px;height:62px;border-radius:11px;flex:none;background:var(--soft);border:1px solid var(--line);overflow:hidden;position:relative}
+  /* pulls (enlarged) */
+  .pulls{display:flex;flex-direction:column;gap:14px}
+  .pull{display:flex;align-items:center;gap:16px;padding:16px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(15,18,40,.04)}
+  .pull:first-child{border-color:rgba(20,241,149,.35);box-shadow:0 10px 30px rgba(20,241,149,.1)}
+  .nft{width:104px;height:104px;border-radius:15px;flex:none;background:var(--soft);border:1px solid var(--line);overflow:hidden;position:relative}
   .nft img{width:100%;height:100%;object-fit:cover}
-  .nft.empty::after{content:"◇";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:20px}
+  .nft.empty::after{content:"◇";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:30px}
   .pull .who{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:600}
-  .pull .win{font-family:'JetBrains Mono';font-size:14px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;word-break:break-all}
-  .pull .meta{font-size:11px;color:var(--faint);margin-top:4px}
+  .pull .win{font-family:'JetBrains Mono';font-size:16px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;word-break:break-all;margin-top:2px}
+  .pull .meta{font-size:11.5px;color:var(--faint);margin-top:6px}
   .val{margin-left:auto;text-align:right;flex:none}
-  .val .v{font-family:'Space Grotesk';font-weight:700;font-size:17px}
-  .val .vu{font-size:11.5px;color:var(--muted)}
-  .val .vlbl{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:1px}
+  .val .v{font-family:'Space Grotesk';font-weight:700;font-size:20px}
+  .val .vu{font-size:12px;color:var(--muted)}
+  .val .vlbl{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:2px}
 
   .hist{font-size:13px}
   .hist .row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -126,6 +130,30 @@
   .confetti{position:absolute;top:-10px;width:9px;height:14px;opacity:0}
   .drawcard.win .confetti{animation:fall 1.5s ease-in forwards}
   @keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(420px) rotate(540deg)}}
+
+  /* incoming card reveal (NFT received in wallet) */
+  #cardpull{position:fixed;inset:0;z-index:65;display:none;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.82);backdrop-filter:blur(8px)}
+  #cardpull.show{display:flex;animation:fade .3s ease}
+  .cpwrap{text-align:center}
+  .cpeyebrow{font-family:'Space Grotesk';font-weight:700;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+  .cpeyebrow .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cpscene{width:230px;height:300px;margin:0 auto;perspective:1100px}
+  .cpcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transform:rotateY(180deg) scale(.9);
+    transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+  #cardpull.reveal .cpcard{transform:rotateY(0) scale(1)}
+  .cpface{position:absolute;inset:0;border-radius:20px;backface-visibility:hidden;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px rgba(15,18,40,.2)}
+  .cpfront{background:var(--soft);display:flex;align-items:center;justify-content:center}
+  .cpfront img{width:100%;height:100%;object-fit:cover}
+  .cpback{background:linear-gradient(150deg,#9945FF,#19D0FF 55%,#14F195);transform:rotateY(180deg);display:flex;align-items:center;justify-content:center}
+  .cpback span{font-size:64px;color:#fff;opacity:.92;animation:bob 1.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+  .cpinfo{margin-top:20px;opacity:0;transition:opacity .5s .5s}
+  #cardpull.reveal .cpinfo{opacity:1}
+  .cpval{font-family:'Space Grotesk';font-weight:700;font-size:26px}
+  .cpval .vu{font-size:14px;color:var(--muted);font-weight:500}
+  .cpwin{font-family:'JetBrains Mono';font-size:14px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:6px}
+  .cpclose{margin-top:20px;font-family:'Space Grotesk';font-weight:600;font-size:13px;padding:9px 22px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
 </style>
 </head>
 <body>
@@ -203,8 +231,21 @@
     <button class="close" onclick="closeDraw()">Close</button>
   </div></div>
 
+  <!-- INCOMING CARD REVEAL -->
+  <div id="cardpull"><div class="cpwrap">
+    <div class="cpeyebrow"><span class="g">New card pulled</span></div>
+    <div class="cpscene"><div class="cpcard" id="cpcard">
+      <div class="cpface cpfront"><img id="cpImg" alt=""/></div>
+      <div class="cpface cpback"><span>⬢</span></div>
+    </div></div>
+    <div class="cpinfo">
+      <div class="cpval" id="cpVal"></div>
+      <div class="cpwin" id="cpWin"></div>
+    </div>
+    <button class="cpclose" onclick="closeCardPull()">Close</button>
+  </div></div>
+
   <footer>
-    Prize wallet <span class="mono" id="prizeWallet">—</span> · <span id="creatorLine"></span><br/>
     Draws are verifiable — winner derived from a recorded Solana blockhash over a holder snapshot. Not affiliated with pump.fun. Not financial advice.
   </footer>
 </div>
@@ -214,8 +255,24 @@ const $ = id => document.getElementById(id);
 const short = a => a ? a.slice(0,4)+"…"+a.slice(-4) : "";
 const usd = n => "$"+(n<0?0:n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 let prevPacks=null, drawing=false;
+let prevPullSigs=null, cardTimer=null;
 
 function closeDraw(){ $("draw").classList.remove("show"); $("drawcard").classList.remove("win"); drawing=false; }
+
+function closeCardPull(){ $("cardpull").classList.remove("show","reveal"); if(cardTimer) clearTimeout(cardTimer); }
+function playCardPull(p){
+  const cp=$("cardpull");
+  const img=$("cpImg");
+  if(p.image){ img.src=p.image; img.style.display="block"; img.onerror=()=>{img.style.display="none";}; }
+  else{ img.style.display="none"; }
+  $("cpVal").innerHTML = (p.valueSol!=null) ? `${(+p.valueSol).toFixed(2)} SOL ${p.valueUsd!=null?`<span class="vu">≈ ${usd(p.valueUsd)}</span>`:''}` : `<span class="vu">value n/a</span>`;
+  $("cpWin").textContent = p.winner ? ("→ "+short(p.winner)) : "";
+  cp.classList.remove("reveal");
+  cp.classList.add("show");
+  setTimeout(()=>cp.classList.add("reveal"), 260);   // start with card face-down, then flip
+  if(cardTimer) clearTimeout(cardTimer);
+  cardTimer = setTimeout(closeCardPull, 7000);
+}
 
 function playDraw(pack, winner, candidates){
   if(drawing) return; drawing=true;
@@ -263,14 +320,12 @@ async function refresh(){
 function render(S){
   const soon = S.comingSoon, t=S.token||{}, c=S.config;
   $("word").innerHTML = soon ? "RAFFLE" : (t.name + (t.symbol?` <span class="g">$${t.symbol}</span>`:""));
-  $("prizeWallet").textContent = short(c.prizeWallet);
   $("statusPill").textContent = soon ? "Coming soon" : "Live";
   $("dot").style.background = soon ? "var(--sol-purple)" : "var(--sol-green)";
 
   if(soon){ $("soon").style.display="block"; $("liveView").style.display="none"; $("tokenImg").style.display="none"; $("hex").style.display="inline"; return; }
   $("soon").style.display="none"; $("liveView").style.display="block";
   if(t.image){ $("tokenImg").src=t.image; $("tokenImg").style.display="inline"; $("hex").style.display="none"; }
-  $("creatorLine").innerHTML = (S.creator?`Creator <span class="mono">${short(S.creator)}</span> · `:"")+`CA <span class="mono">${short(c.mint)}</span>`;
 
   const f=S.fees;
   $("threshold").textContent=c.threshold; $("threshold2").textContent="$"+c.threshold; $("bigPct").textContent=c.bigPct;
@@ -298,8 +353,14 @@ function render(S){
     <td class="r">${h.pct.toFixed(2)}%</td>
     <td class="r">${h.big?'—':h.chance.toFixed(2)+'%'}${h.big?'':`<div class="cbar"><span style="width:${Math.min(100,h.chance)}%"></span></div>`}</td></tr>`).join(""); }
 
-  // pulls
+  // pulls — detect a freshly received card and reveal it before it lands in the list
   const pulls=S.pulls||[], pl=$("pulls");
+  const sigs=pulls.map(p=>p.sig);
+  if(prevPullSigs!==null){
+    const fresh=pulls.find(p=>!prevPullSigs.includes(p.sig));
+    if(fresh) playCardPull(fresh);
+  }
+  prevPullSigs=sigs;
   if(!pulls.length){ pl.innerHTML=`<div class="empty">No pulls yet.</div>`; }
   else{ pl.innerHTML=pulls.map(p=>{
     const vb=(p.valueSol!=null)?`<div class="val"><div class="v">${(+p.valueSol).toFixed(2)} SOL</div>${p.valueUsd!=null?`<div class="vu">≈ ${usd(p.valueUsd)}</div>`:''}<div class="vlbl">Value</div></div>`

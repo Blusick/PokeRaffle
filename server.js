@@ -17,20 +17,23 @@ const web3 = require("@solana/web3.js");
 
 /* ----------------------------- CONFIG ----------------------------- */
 const CONFIG = {
-  TOKEN_MINT:   "J4Y92jy5Lr9ho1aV41bhguytnzBbsPhZJahmaVszpump",   // <-- empty = Coming Soon. Paste the CA here to go live.
+  TOKEN_MINT:   "",   // <-- empty = Coming Soon. Paste the CA here to go live.
   TOKEN_NAME:   "RAFFLE",                             // shown while no token is configured
-  PRIZE_WALLET: "3tnzEgqo6U19ocZbbc49vcGv3mGSoWNFAYjQQk5gF2qP",
+  PRIZE_WALLET: "FCaiVbqDr721tDQ6jTTVF6cghnTDrzx6bZTpKB1TsqHw",
   PACK_THRESHOLD_USD: 50,
   BIG_HOLDER_PCT: 4,
   POLL_MS: 30000,            // heavy poll: token info, holders, pulls
   FAST_POLL_MS: 3000,        // light poll: creator fees only (drives the bar)
-  PULLS_RESET_TOKEN: "reset-2026-06-20",  // bump this string to wipe latest pulls again
+  PULLS_RESET_TOKEN: "reset-2026-06-20b",  // bump this string to wipe latest pulls again
   TOP_HOLDERS_SHOWN: 50,
   MAX_PULLS: 12,
   DEFAULT_NFT_VALUE_SOL: null,                        // optional fallback value per card (SOL) if no market price found
   PUMP_PROGRAM:     "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
   PUMPSWAP_PROGRAM: "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
   WSOL_MINT:        "So11111111111111111111111111111111111111112",
+  USDC_MINT:        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  TOKEN_PROGRAM:    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  TOKEN_2022:       "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
 };
 const HELIUS_KEY = process.env.HELIUS_API_KEY;
 const PORT = process.env.PORT || 3000;
@@ -49,7 +52,7 @@ let live = {
 };
 
 function freshState() {
-  return { mint: CONFIG.TOKEN_MINT, baselineSol: null, lastSol: null, cumUsd: 0, packs: 0, winners: [],
+  return { mint: CONFIG.TOKEN_MINT, baselineUsd: null, lastUsd: null, cumUsd: 0, packs: 0, winners: [],
     recentPulls: [], seenPulls: [], pullsResetToken: CONFIG.PULLS_RESET_TOKEN, pullsSince: Date.now(), startedAt: Date.now() };
 }
 function loadState() {
@@ -64,7 +67,7 @@ function loadState() {
   if (s.mint !== CONFIG.TOKEN_MINT) {
     console.log(`Token changed (${s.mint || "none"} -> ${CONFIG.TOKEN_MINT || "none"}); resetting packs/fees/winners.`);
     s.mint = CONFIG.TOKEN_MINT;
-    s.baselineSol = null; s.lastSol = null; s.cumUsd = 0; s.packs = 0; s.winners = [];
+    s.baselineUsd = null; s.lastUsd = null; s.cumUsd = 0; s.packs = 0; s.winners = [];
   }
   // Reset the latest pulls when the reset token changes; only pulls after `pullsSince` are shown.
   if (s.pullsResetToken !== CONFIG.PULLS_RESET_TOKEN) {
@@ -111,19 +114,31 @@ async function loadTokenInfo() {
   } catch (e) {}
 }
 
-/* ----------------------------- CREATOR FEES ----------------------------- */
-async function getUnclaimedCreatorSol() {
+/* ----------------------------- CREATOR FEES -----------------------------
+   Returns the USD value of unclaimed creator fees sitting in the creator vault(s).
+   Handles both SOL-quoted pools (SOL/WSOL) and USDC-quoted pools (USDC). */
+async function getUnclaimedCreatorUsd() {
   const creator = live.token.creator;
   if (!creator) return null;
   const auth = [];
   try { auth.push(pda("creator-vault", creator, CONFIG.PUMP_PROGRAM)); } catch (e) {}
   try { auth.push(pda("creator_vault", creator, CONFIG.PUMPSWAP_PROGRAM)); } catch (e) {}
-  let lamports = 0;
+  let usd = 0;
   for (const a of auth) {
-    try { const bal = await rpc("getBalance", [a]); lamports += (bal && bal.value != null ? bal.value : (bal || 0)); } catch (e) {}
-    try { const ta = await rpc("getTokenAccountsByOwner", [a, { mint: CONFIG.WSOL_MINT }, { encoding: "jsonParsed" }]); (ta.value || []).forEach(x => { lamports += Number(x.account.data.parsed.info.tokenAmount.amount); }); } catch (e) {}
+    try { const bal = await rpc("getBalance", [a]); const lam = (bal && bal.value != null ? bal.value : (bal || 0)); usd += (lam / 1e9) * live.solUsd; } catch (e) {}
+    for (const prog of [CONFIG.TOKEN_PROGRAM, CONFIG.TOKEN_2022]) {
+      try {
+        const ta = await rpc("getTokenAccountsByOwner", [a, { programId: prog }, { encoding: "jsonParsed" }]);
+        (ta.value || []).forEach(x => {
+          const info = x.account.data.parsed.info;
+          const ui = Number(info.tokenAmount.uiAmount || 0);
+          if (info.mint === CONFIG.WSOL_MINT) usd += ui * live.solUsd;
+          else if (info.mint === CONFIG.USDC_MINT) usd += ui;
+        });
+      } catch (e) {}
+    }
   }
-  return lamports / 1e9;
+  return usd;
 }
 
 /* ----------------------------- HOLDERS ----------------------------- */
@@ -227,13 +242,13 @@ async function reconcilePacks() {
   saveState();
 }
 
-/* ----------------------------- FEE ACCUMULATION ----------------------------- */
-function ingestFeeReading(currentSol) {
-  if (currentSol == null) return;
+/* ----------------------------- FEE ACCUMULATION (USD) ----------------------------- */
+function ingestFeeReading(currentUsd) {
+  if (currentUsd == null) return;
   const now = Date.now();
-  if (state.baselineSol == null) { state.baselineSol = currentSol; state.lastSol = currentSol; saveState(); return; }
-  if (currentSol > state.lastSol) state.cumUsd += (currentSol - state.lastSol) * live.solUsd;
-  state.lastSol = currentSol;
+  if (state.baselineUsd == null) { state.baselineUsd = currentUsd; state.lastUsd = currentUsd; saveState(); return; }
+  if (currentUsd > state.lastUsd) state.cumUsd += (currentUsd - state.lastUsd);   // claims (decreases) don't reduce cumulative
+  state.lastUsd = currentUsd;
   if (live.lastSampleAt) { const dt = (now - live.lastSampleAt) / 1000; if (dt > 0) { const inst = (state.cumUsd - live.lastSampleCum) / dt; live.rateUsdPerSec = live.rateUsdPerSec ? live.rateUsdPerSec * 0.6 + inst * 0.4 : inst; } }
   live.lastSampleAt = now; live.lastSampleCum = state.cumUsd;
 }
@@ -244,8 +259,8 @@ let fastBusy = false;
 async function fastPoll() {
   if (fastBusy || comingSoon()) return; fastBusy = true;
   try {
-    const sol = await getUnclaimedCreatorSol();
-    ingestFeeReading(sol);
+    const feeUsd = await getUnclaimedCreatorUsd();
+    ingestFeeReading(feeUsd);
     await reconcilePacks();
     live.updatedAt = Date.now();
   } catch (e) { live.error = e.message; }
