@@ -17,7 +17,7 @@ const web3 = require("@solana/web3.js");
 
 /* ----------------------------- CONFIG ----------------------------- */
 const CONFIG = {
-  TOKEN_MINT:   "",   // <-- empty = Coming Soon. Paste the CA here to go live.
+  TOKEN_MINT:   "5K7rLXkxuGEChStXjirPtmAL1DzJKerXSoVNHcZ6pump",   // <-- empty = Coming Soon. Paste the CA here to go live.
   TOKEN_NAME:   "RAFFLE",                             // shown while no token is configured
   PRIZE_WALLET: "FCaiVbqDr721tDQ6jTTVF6cghnTDrzx6bZTpKB1TsqHw",
   PACK_THRESHOLD_USD: 50,
